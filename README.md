@@ -2,13 +2,15 @@
 
 This project implements a Convolutional Neural Network (CNN) to detect pneumonia from chest X-ray images. 
 
+### [🚀 Live Demo - Project Website](https://Sharukesh-M.github.io/pneumonia_detection/)
+
 ## Project Structure
 
 - `model.py`: Defines the CNN architecture using TensorFlow/Keras.
 - `train.py`: Script to train the model on the pneumonia dataset.
 - `gui.py`: A local Desktop application for making predictions.
 - `download_dataset.py`: Script to download the dataset from Kaggle.
-- `pneumonia_detection_website.html`: A frontend presentation of the project.
+- `index.html`: A frontend presentation of the project.
 - `pneumonia_cnn_model.h5`: Pre-trained model weights (excluded from Git due to size).
 
 ## Getting Started
