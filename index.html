@@ -4,25 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PneumoScan AI — CNN Pneumonia Detection</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#05080f;--bg2:#0b1120;--bg3:#101828;--card:#111827;--border:#1e2d45;--accent:#3b82f6;--accent2:#06b6d4;--accent3:#10b981;--danger:#ef4444;--warn:#f59e0b;--text:#f0f6ff;--muted:#6b7fa3;--subtle:#8fa3c1;--radius:12px;--radius-lg:20px}
+:root{--bg:#030508;--bg2:#080b12;--bg3:#0e121d;--card:#0f1420;--border:#1a2233;--accent:#2563eb;--accent2:#0891b2;--accent3:#059669;--danger:#dc2626;--warn:#d97706;--text:#f8fafc;--muted:#64748b;--subtle:#94a3b8;--radius:14px;--radius-lg:24px}
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.7;overflow-x:hidden}
-h1,h2,h3,h4{font-family:'Syne',sans-serif;line-height:1.2}
-code,pre,kbd{font-family:'DM Mono',monospace}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Manrope',sans-serif;line-height:1.2;font-weight:700}
+code,pre,kbd{font-family:'JetBrains Mono',monospace}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:64px;background:rgba(5,8,15,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px}
-.logo-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
-.nav-links{display:flex;gap:28px;list-style:none}
-.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;transition:color .2s}
-.nav-links a:hover{color:var(--text)}
-.nav-cta{background:var(--accent);color:#fff;padding:8px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-family:'Syne';font-weight:600;transition:opacity .2s}
+.logo{font-family:'Manrope',sans-serif;font-weight:800;font-size:22px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px;letter-spacing:-0.5px}
+.logo-dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow: 0 0 12px var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.9)}}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;letter-spacing:0.2px}
+.nav-links a:hover{color:var(--text);transform: translateY(-1px)}
+.nav-cta{background:var(--accent);color:#fff;padding:10px 24px;border-radius:10px;text-decoration:none;font-size:14px;font-family:'Manrope';font-weight:700;transition:all .2s;box-shadow: 0 4px 12px rgba(37,99,235,0.2)}
+.nav-cta:hover{transform: translateY(-2px); box-shadow: 0 6px 16px rgba(37,99,235,0.3); opacity:0.9}
 #hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 5% 60px}
 .hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:48px 48px;opacity:.25}
 .hero-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(59,130,246,.15) 0%,transparent 70%);pointer-events:none}
@@ -130,6 +131,11 @@ footer a{color:var(--accent);text-decoration:none}
 .prompt-box p{font-size:14px;color:var(--subtle);line-height:1.8;font-style:italic}
 .fade-in{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
 .fade-in.visible{opacity:1;transform:none}
+.loader-dots{display:flex;gap:4px;font-size:24px;color:var(--accent);justify-content:center;padding:20px 0}
+.loader-dots span{animation:blink 1.4s infinite both}
+.loader-dots span:nth-child(2){animation-delay:.2s}
+.loader-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
 </style>
 </head>
 <body>
@@ -521,31 +527,44 @@ const SAMPLES={
 function simulateResult(type){
   const s=SAMPLES[type];
   document.getElementById('resultPlaceholder').style.display='none';
-  const rc=document.getElementById('resultContent'); rc.style.display='block';
-  document.getElementById('resultLabel').textContent=s.label;
-  document.getElementById('resultLabel').className='result-header '+s.cls;
-  const fill=document.getElementById('confFill');
-  fill.style.width='0%'; fill.className='confidence-fill'+(s.cls==='result-pneumonia'?' bad':'');
-  setTimeout(()=>fill.style.width=s.conf+'%',100);
-  document.getElementById('confNum').textContent=s.conf.toFixed(1)+'%';
-  const logEl=document.getElementById('logLines'); logEl.innerHTML='';
-  s.logs.forEach((l,i)=>setTimeout(()=>{
-    logEl.innerHTML+=`<div style="opacity:0;transition:opacity .3s" id="lg${i}${type}">→ ${l}</div>`;
-    setTimeout(()=>{const e=document.getElementById(`lg${i}${type}`);if(e)e.style.opacity=1;},50);
-  },i*280));
-  const names=['Input','Conv 32','Conv 64','Conv 128','Conv 256','Dense 512','Output'];
-  const bars=document.getElementById('layerBars'); bars.innerHTML='';
-  s.acts.forEach((a,i)=>{
-    const pct=Math.round(a*100);
-    bars.innerHTML+=`<div style="margin-bottom:5px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7fa3;margin-bottom:3px">
-        <span>${names[i]}</span><span style="font-family:'DM Mono'">${pct}%</span>
-      </div>
-      <div style="background:#101828;border-radius:100px;height:4px;overflow:hidden">
-        <div style="height:100%;width:0%;border-radius:100px;background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width 1s ${i*.08}s ease" data-w="${pct}%"></div>
-      </div></div>`;
-  });
-  setTimeout(()=>bars.querySelectorAll('[data-w]').forEach(el=>el.style.width=el.dataset.w),150);
+  const rc=document.getElementById('resultContent'); 
+  rc.style.display='block';
+  rc.style.opacity='0.5'; // dimmed while processing
+  
+  document.getElementById('resultLabel').textContent='ANALYZING...';
+  document.getElementById('resultLabel').className='result-header';
+  document.getElementById('confFill').style.width='0%';
+  document.getElementById('confNum').textContent='0%';
+  document.getElementById('logLines').innerHTML='<div class="loader-dots"><span>.</span><span>.</span><span>.</span></div>';
+  document.getElementById('layerBars').innerHTML='';
+
+  setTimeout(() => {
+    rc.style.opacity='1';
+    document.getElementById('resultLabel').textContent=s.label;
+    document.getElementById('resultLabel').className='result-header '+s.cls;
+    const fill=document.getElementById('confFill');
+    fill.style.width='0%'; fill.className='confidence-fill'+(s.cls==='result-pneumonia'?' bad':'');
+    setTimeout(()=>fill.style.width=s.conf+'%',100);
+    document.getElementById('confNum').textContent=s.conf.toFixed(1)+'%';
+    const logEl=document.getElementById('logLines'); logEl.innerHTML='';
+    s.logs.forEach((l,i)=>setTimeout(()=>{
+      logEl.innerHTML+=`<div style="opacity:0;transition:opacity .3s" id="lg${i}${type}">→ ${l}</div>`;
+      setTimeout(()=>{const e=document.getElementById(`lg${i}${type}`);if(e)e.style.opacity=1;},50);
+    },i*280));
+    const names=['Input','Conv 32','Conv 64','Conv 128','Conv 256','Dense 512','Output'];
+    const bars=document.getElementById('layerBars'); bars.innerHTML='';
+    s.acts.forEach((a,i)=>{
+      const pct=Math.round(a*100);
+      bars.innerHTML+=`<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px">
+          <span>${names[i]}</span><span style="font-family:'JetBrains Mono'">${pct}%</span>
+        </div>
+        <div style="background:#080b12;border-radius:100px;height:5px;overflow:hidden">
+          <div style="height:100%;width:0%;border-radius:100px;background:linear-gradient(90deg,#2563eb,#0891b2);transition:width 1s ${i*.08}s ease" data-w="${pct}%"></div>
+        </div></div>`;
+    });
+    setTimeout(()=>bars.querySelectorAll('[data-w]').forEach(el=>el.style.width=el.dataset.w),150);
+  }, 800);
 }
 
 function handleFile(e){
@@ -558,7 +577,7 @@ const zone=document.getElementById('uploadZone');
 zone.ondragover=e=>{e.preventDefault();zone.classList.add('drag');};
 zone.ondragleave=()=>zone.classList.remove('drag');
 zone.ondrop=e=>{e.preventDefault();zone.classList.remove('drag');const fi=document.getElementById('fileInput');if(e.dataTransfer.files[0]){handleFile({target:{files:e.dataTransfer.files}})}};
-simulateResult('normal');
+// simulateResult('normal');
 </script>
 </body>
 </html>
