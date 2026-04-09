@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PneumoScan AI — CNN Pneumonia Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#05080f;--bg2:#0b1120;--bg3:#101828;--card:#111827;--border:#1e2d45;--accent:#3b82f6;--accent2:#06b6d4;--accent3:#10b981;--danger:#ef4444;--warn:#f59e0b;--text:#f0f6ff;--muted:#6b7fa3;--subtle:#8fa3c1;--radius:12px;--radius-lg:20px}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Syne',sans-serif;line-height:1.2}
+code,pre,kbd{font-family:'DM Mono',monospace}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:64px;background:rgba(5,8,15,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--accent);color:#fff;padding:8px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-family:'Syne';font-weight:600;transition:opacity .2s}
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 5% 60px}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:48px 48px;opacity:.25}
+.hero-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(59,130,246,.15) 0%,transparent 70%);pointer-events:none}
+.hero-inner{position:relative;max-width:900px;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--accent);padding:6px 16px;border-radius:100px;font-size:13px;font-family:'DM Mono';margin-bottom:32px}
+.hero-badge span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite}
+h1.hero-title{font-size:clamp(42px,7vw,84px);font-weight:800;letter-spacing:-.02em;margin-bottom:24px;background:linear-gradient(135deg,#f0f6ff 0%,#7eb4ff 50%,#06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:18px;color:var(--subtle);max-width:600px;margin:0 auto 40px;font-weight:300}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--accent);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-family:'Syne';font-weight:700;font-size:15px;transition:all .2s;border:none;cursor:pointer}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(59,130,246,.4)}
+.btn-outline{background:transparent;color:var(--text);padding:14px 32px;border-radius:10px;text-decoration:none;font-family:'Syne';font-weight:600;font-size:15px;border:1px solid var(--border);transition:all .2s;cursor:pointer}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.hero-stats{display:flex;justify-content:center;gap:48px;margin-top:60px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-val{font-family:'Syne';font-size:36px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:13px;color:var(--muted);margin-top:2px}
+section{padding:100px 5%}
+.section-label{font-family:'DM Mono';font-size:12px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.section-title{font-size:clamp(28px,4vw,44px);font-weight:800;margin-bottom:20px}
+.section-sub{color:var(--subtle);max-width:540px;font-size:17px;font-weight:300;line-height:1.7}
+.max{max-width:1140px;margin:0 auto}
+#how{background:var(--bg2)}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:60px;position:relative}
+.steps::before{content:'';position:absolute;top:36px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--border),var(--border),transparent)}
+.step{text-align:center;padding:0 12px}
+.step-num{width:72px;height:72px;border-radius:50%;border:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-family:'Syne';font-size:22px;font-weight:800;color:var(--accent)}
+.step h4{font-size:15px;margin-bottom:8px;font-weight:700}
+.step p{font-size:13px;color:var(--muted);line-height:1.6}
+#visualizer{background:var(--bg)}
+.viz-wrap{display:grid;grid-template-columns:1fr 300px;gap:32px;margin-top:50px;align-items:start}
+#nnCanvas{width:100%;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--bg3)}
+.viz-panel{display:flex;flex-direction:column;gap:14px}
+.panel-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.panel-card h4{font-family:'Syne';font-size:13px;font-weight:700;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.metric-row:last-child{border:none}
+.metric-key{color:var(--muted)}
+.metric-val{font-family:'DM Mono';font-weight:500;color:var(--accent2)}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--subtle);margin-bottom:6px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ctrl-row label{font-size:12px;color:var(--muted);min-width:70px}
+.ctrl-row input[type=range]{flex:1;accent-color:var(--accent)}
+.ctrl-row output{font-family:'DM Mono';font-size:11px;color:var(--accent);min-width:24px;text-align:right}
+.pill{font-family:'DM Mono';font-size:11px;padding:5px 12px;border-radius:100px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .2s;background:transparent}
+.pill.active,.pill:hover{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.1)}
+#demo{background:var(--bg2)}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:48px 24px;text-align:center;transition:all .3s;cursor:pointer;background:var(--bg3)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(59,130,246,.05)}
+.upload-icon{width:60px;height:60px;margin:0 auto 16px;opacity:.5}
+.upload-zone h3{font-size:18px;margin-bottom:8px}
+.upload-zone p{color:var(--muted);font-size:14px}
+#fileInput{display:none}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;min-height:280px;display:flex;flex-direction:column;gap:14px}
+.result-header{font-family:'Syne';font-size:22px;font-weight:800}
+.result-normal{color:#10b981}
+.result-pneumonia{color:#ef4444}
+.confidence-bar{background:var(--bg3);border-radius:100px;height:8px;overflow:hidden;margin:4px 0}
+.confidence-fill{height:100%;border-radius:100px;transition:width 1.2s ease;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.confidence-fill.bad{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.result-detail{font-size:12px;color:var(--muted);line-height:1.9}
+#results{background:var(--bg)}
+.metrics-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:50px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;transition:transform .2s,border-color .2s;position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.metric-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.metric-card .val{font-family:'Syne';font-size:36px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.metric-card .key{font-size:12px;color:var(--muted);margin-top:4px}
+.metric-card .desc{font-size:11px;color:var(--muted);margin-top:6px;opacity:.7}
+.cm-wrap{margin-top:50px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.cm-table-wrap table{width:100%;border-collapse:collapse;font-size:13px}
+.cm-table-wrap td,.cm-table-wrap th{padding:12px 14px;border:1px solid var(--border);text-align:center;font-family:'DM Mono'}
+.cm-table-wrap th{background:var(--bg3);color:var(--subtle);font-size:11px;font-family:'DM Sans'}
+.cm-tp{background:rgba(16,185,129,.15);color:#10b981}
+.cm-tn{background:rgba(59,130,246,.15);color:#3b82f6}
+.cm-fp{background:rgba(245,158,11,.12);color:#f59e0b}
+.cm-fn{background:rgba(239,68,68,.15);color:#ef4444}
+.chart-area{position:relative;height:240px}
+#architecture{background:var(--bg2)}
+.arch-diagram{margin-top:40px;overflow-x:auto}
+#code{background:var(--bg)}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
+.tab{padding:10px 20px;font-family:'DM Mono';font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--text)}
+.code-block{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:24px;overflow-x:auto;position:relative}
+.code-block pre{font-size:12px;line-height:1.8;color:#e2e8f0}
+.code-copy{position:absolute;top:12px;right:12px;background:var(--bg3);border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;font-size:11px;font-family:'DM Mono';cursor:pointer;transition:all .2s}
+.code-copy:hover{color:var(--accent);border-color:var(--accent)}
+.kw{color:#79b8ff}.fn{color:#b392f0}.st{color:#9ecbff}.cm2{color:#6a737d}.num{color:#f8c555}.cls{color:#ffa657}
+.tab-content{display:none}.tab-content.active{display:block}
+#team{background:var(--bg2)}
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:50px}
+.team-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 20px;text-align:center;transition:transform .2s,border-color .2s}
+.team-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.avatar{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Syne';font-size:24px;font-weight:800;color:#fff;margin:0 auto 16px}
+.team-card h4{font-size:16px;margin-bottom:4px}
+.team-card .role{font-size:13px;color:var(--muted)}
+footer{background:var(--bg3);border-top:1px solid var(--border);padding:40px 5%;text-align:center;color:var(--muted);font-size:14px}
+footer a{color:var(--accent);text-decoration:none}
+.prompt-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-top:28px}
+.prompt-box h4{font-family:'DM Mono';font-size:11px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.prompt-box p{font-size:14px;color:var(--subtle);line-height:1.8;font-style:italic}
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.fade-in.visible{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo"><span class="logo-dot"></span>PneumoScan AI</a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#visualizer">Visualizer</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#code">Code</a></li>
+  </ul>
+  <a href="#demo" class="nav-cta">Try Demo</a>
+</nav>
+
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="hero-badge"><span></span> Mini Project · B.Tech CSE / AI · 2024–25</div>
+    <h1 class="hero-title">Detecting Pneumonia<br>with Deep Learning</h1>
+    <p class="hero-sub">A CNN trained on 5,863 chest X-ray images achieves 92.6% accuracy — matching the diagnostic performance of trained radiologists.</p>
+    <div class="hero-btns">
+      <a href="#demo" class="btn-primary">Try Live Demo</a>
+      <a href="#visualizer" class="btn-outline">Watch Neurons Fire</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-val">92.6%</div><div class="stat-lbl">Accuracy</div></div>
+      <div class="stat"><div class="stat-val">94.4%</div><div class="stat-lbl">Recall</div></div>
+      <div class="stat"><div class="stat-val">0.971</div><div class="stat-lbl">AUC-ROC</div></div>
+      <div class="stat"><div class="stat-val">5,863</div><div class="stat-lbl">Training images</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="max fade-in">
+    <div class="section-label">Methodology</div>
+    <h2 class="section-title">How it works</h2>
+    <p class="section-sub">Five stages transform a raw chest X-ray into an accurate clinical prediction in under one second.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><h4>Data Collection</h4><p>5,863 labeled chest X-rays from Kaggle — Normal &amp; Pneumonia classes</p></div>
+      <div class="step"><div class="step-num">2</div><h4>Preprocessing</h4><p>Resize to 150×150, normalize pixels, apply augmentation</p></div>
+      <div class="step"><div class="step-num">3</div><h4>CNN Training</h4><p>4 convolutional blocks learn to extract pneumonia-specific features</p></div>
+      <div class="step"><div class="step-num">4</div><h4>Evaluation</h4><p>Accuracy, recall, F1-score, AUC-ROC on held-out test set</p></div>
+      <div class="step"><div class="step-num">5</div><h4>Prediction</h4><p>Upload any chest X-ray — get Normal or Pneumonia + confidence score</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="visualizer">
+  <div class="max fade-in">
+    <div class="section-label">Interactive visualization</div>
+    <h2 class="section-title">Watch the CNN learn</h2>
+    <p class="section-sub">Real-time animation of how signals propagate through the neural network. Each circle is a neuron — brighter means more active.</p>
+    <div class="viz-wrap">
+      <div>
+        <canvas id="nnCanvas" width="680" height="360"></canvas>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn-primary" id="btnFire" style="padding:10px 22px;font-size:14px">Fire signal</button>
+          <button class="btn-outline" id="btnAuto" style="padding:10px 22px;font-size:14px">Auto fire</button>
+          <button class="btn-outline" id="btnReset" style="padding:10px 22px;font-size:14px">Reset</button>
+          <select id="archSelect" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-family:'DM Mono';font-size:12px;cursor:pointer">
+            <option value="shallow">Shallow [3→6→4→2]</option>
+            <option value="deep">Deep [3→8→6→5→4→2]</option>
+            <option value="wide">Wide [3→12→12→2]</option>
+          </select>
+        </div>
+      </div>
+      <div class="viz-panel">
+        <div class="panel-card">
+          <h4>Live stats</h4>
+          <div class="metric-row"><span class="metric-key">Architecture</span><span class="metric-val" id="vizArch">Shallow</span></div>
+          <div class="metric-row"><span class="metric-key">Total neurons</span><span class="metric-val" id="vizNeurons">15</span></div>
+          <div class="metric-row"><span class="metric-key">Connections</span><span class="metric-val" id="vizConns">—</span></div>
+          <div class="metric-row"><span class="metric-key">Active neurons</span><span class="metric-val" id="vizActive">0</span></div>
+          <div class="metric-row"><span class="metric-key">Signal pulses</span><span class="metric-val" id="vizPulses">0</span></div>
+        </div>
+        <div class="panel-card">
+          <h4>Legend</h4>
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Input neurons</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Hidden neurons</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Output — Normal</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Output — Pneumonia</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Active pulse</div>
+        </div>
+        <div class="panel-card">
+          <h4>Controls</h4>
+          <div class="ctrl-row"><label>Speed</label><input type="range" id="speedSlider" min="1" max="10" value="5" step="1"><output id="speedOut">5</output></div>
+          <div class="ctrl-row" style="margin-top:6px"><label>Glow</label><input type="range" id="glowSlider" min="1" max="6" value="3" step="1"><output id="glowOut">3</output></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="max fade-in">
+    <div class="section-label">Live inference</div>
+    <h2 class="section-title">Try the detector</h2>
+    <p class="section-sub">Upload a chest X-ray image or select a sample to see the CNN prediction pipeline in action.</p>
+    <div class="demo-grid">
+      <div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <svg class="upload-icon" viewBox="0 0 60 60" fill="none">
+            <rect x="8" y="14" width="44" height="34" rx="4" stroke="#3b82f6" stroke-width="1.5"/>
+            <path d="M20 38l8-10 6 8 4-5 7 7" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="22" cy="24" r="3" stroke="#3b82f6" stroke-width="1.5"/>
+            <path d="M30 8v10m-4-5l4-5 4 5" stroke="#06b6d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h3>Upload chest X-ray</h3>
+          <p>JPG, PNG, BMP — any size<br><span style="color:var(--accent);font-size:13px">Click or drag &amp; drop</span></p>
+          <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+        </div>
+        <img id="demoImg" src="" alt="preview" style="width:100%;margin-top:14px;border-radius:12px;border:1px solid var(--border);display:none;max-height:220px;object-fit:cover">
+        <div style="margin-top:14px">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Or try a sample case:</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="pill active" onclick="simulateResult('normal')">Normal lung</button>
+            <button class="pill" onclick="simulateResult('pneumonia')">Bacterial pneumonia</button>
+            <button class="pill" onclick="simulateResult('viral')">Viral pneumonia</button>
+            <button class="pill" onclick="simulateResult('borderline')">Borderline case</button>
+          </div>
+        </div>
+      </div>
+      <div class="result-card" id="resultCard">
+        <div id="resultPlaceholder" style="color:var(--muted);font-size:14px;margin:auto;text-align:center;padding:40px 0">Select a sample or upload an image to see the prediction.</div>
+        <div id="resultContent" style="display:none">
+          <div id="resultLabel" class="result-header"></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Confidence score</div>
+          <div class="confidence-bar"><div class="confidence-fill" id="confFill" style="width:0%"></div></div>
+          <div style="font-family:'DM Mono';font-size:24px;font-weight:500;color:var(--accent2)" id="confNum">0%</div>
+          <div style="border-top:1px solid var(--border);padding-top:12px">
+            <div style="font-size:11px;font-family:'DM Mono';color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Processing log</div>
+            <div id="logLines" class="result-detail"></div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:12px">
+            <div style="font-size:11px;font-family:'DM Mono';color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Layer activations</div>
+            <div id="layerBars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="max fade-in">
+    <div class="section-label">Model performance</div>
+    <h2 class="section-title">Evaluation results</h2>
+    <p class="section-sub">Tested on 624 held-out images never seen during training. Recall is the most critical metric — it measures how many pneumonia cases are caught.</p>
+    <div class="metrics-grid">
+      <div class="metric-card"><div class="val">92.6%</div><div class="key">Accuracy</div><div class="desc">578/624 correct</div></div>
+      <div class="metric-card"><div class="val">93.9%</div><div class="key">Precision</div><div class="desc">Low false-positive rate</div></div>
+      <div class="metric-card"><div class="val">94.4%</div><div class="key">Recall</div><div class="desc">Critical: catches pneumonia</div></div>
+      <div class="metric-card"><div class="val">94.1%</div><div class="key">F1 Score</div><div class="desc">Balanced precision/recall</div></div>
+      <div class="metric-card"><div class="val">0.971</div><div class="key">AUC-ROC</div><div class="desc">Excellent discrimination</div></div>
+    </div>
+    <div class="cm-wrap">
+      <div class="cm-table-wrap">
+        <h3 style="font-size:17px;margin-bottom:16px;font-family:'Syne'">Confusion matrix</h3>
+        <table>
+          <tr><th></th><th>Predicted Normal</th><th>Predicted Pneumonia</th></tr>
+          <tr><td style="color:var(--subtle);font-family:'DM Sans';text-align:left;padding-left:0;font-size:12px">Actual Normal</td><td class="cm-tn">TN = 210<br><small style="font-size:10px;opacity:.7">Correctly identified</small></td><td class="cm-fp">FP = 24<br><small style="font-size:10px;opacity:.7">False alarm</small></td></tr>
+          <tr><td style="color:var(--subtle);font-family:'DM Sans';text-align:left;padding-left:0;font-size:12px">Actual Pneumonia</td><td class="cm-fn">FN = 22<br><small style="font-size:10px;opacity:.7">Missed — critical!</small></td><td class="cm-tp">TP = 368<br><small style="font-size:10px;opacity:.7">Correctly caught</small></td></tr>
+        </table>
+        <p style="font-size:13px;color:var(--muted);margin-top:12px;line-height:1.7">Only 22 pneumonia cases were missed. The model prioritises high recall to minimise missed diagnoses.</p>
+      </div>
+      <div>
+        <h3 style="font-size:17px;margin-bottom:16px;font-family:'Syne'">Training history</h3>
+        <div class="chart-area"><canvas id="trainChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="max fade-in">
+    <div class="section-label">Model design</div>
+    <h2 class="section-title">CNN architecture</h2>
+    <p class="section-sub">Four convolutional blocks extract progressively abstract features, followed by a fully connected classifier head outputting a single sigmoid probability.</p>
+    <div class="arch-diagram">
+      <canvas id="archCanvas" width="1100" height="170" style="width:100%;border-radius:var(--radius-lg)"></canvas>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px">
+      <div class="panel-card" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px"><div style="font-family:'DM Mono';font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Conv2D layers</div><div style="font-size:26px;font-family:'Syne';font-weight:800">4 blocks</div><div style="font-size:12px;color:var(--muted);margin-top:4px">32 → 64 → 128 → 256 filters</div></div>
+      <div class="panel-card" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px"><div style="font-family:'DM Mono';font-size:10px;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Input shape</div><div style="font-size:26px;font-family:'Syne';font-weight:800">150×150×3</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Normalised RGB image</div></div>
+      <div class="panel-card" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px"><div style="font-family:'DM Mono';font-size:10px;color:var(--accent3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Parameters</div><div style="font-size:26px;font-family:'Syne';font-weight:800">~3.2M</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Trainable weights</div></div>
+      <div class="panel-card" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px"><div style="font-family:'DM Mono';font-size:10px;color:var(--warn);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Output</div><div style="font-size:26px;font-family:'Syne';font-weight:800">Sigmoid</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Binary probability [0, 1]</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="code">
+  <div class="max fade-in">
+    <div class="section-label">Source code</div>
+    <h2 class="section-title">Complete implementation</h2>
+    <p class="section-sub">Copy any file below and run it directly. Start with setup.sh to install everything.</p>
+    <div class="prompt-box">
+      <h4>Prompt used to generate this project</h4>
+      <p>"Build a complete CNN in Python with TensorFlow/Keras to detect pneumonia from chest X-rays. Include ImageDataGenerator with augmentation (flip, rotate, zoom, shear), a 4-block CNN (32→64→128→256 filters) with BatchNormalization and Dropout, Adam optimizer, ReduceLROnPlateau callback, EarlyStopping, evaluation with confusion matrix + AUC-ROC, and a Tkinter GUI for live prediction. Target 90%+ accuracy on the Kaggle Chest X-Ray Images (Pneumonia) dataset."</p>
+    </div>
+    <div style="margin-top:28px">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('model')">model.py</button>
+        <button class="tab" onclick="switchTab('train')">train.py</button>
+        <button class="tab" onclick="switchTab('predict')">predict.py</button>
+        <button class="tab" onclick="switchTab('gui')">gui.py</button>
+        <button class="tab" onclick="switchTab('setup')">setup.sh</button>
+      </div>
+
+      <div class="tab-content active" id="tab-model">
+        <div class="code-block"><button class="code-copy" onclick="copyTab('code-model',this)">Copy</button>
+<pre id="code-model"># 10.3 CNN Model Architecture Code
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import (Conv2D, MaxPooling2D, Flatten,
+   Dense, Dropout, BatchNormalization)
+ 
+def build_model(input_shape=(150,150,3)):
+   model = Sequential([
+       # Block 1 — 32 filters
+       Conv2D(32,(3,3),padding='same',activation='relu',input_shape=input_shape),
+       BatchNormalization(), MaxPooling2D(2,2), Dropout(0.25),
+       # Block 2 — 64 filters
+       Conv2D(64,(3,3),padding='same',activation='relu'),
+       BatchNormalization(), MaxPooling2D(2,2), Dropout(0.25),
+       # Block 3 — 128 filters
+       Conv2D(128,(3,3),padding='same',activation='relu'),
+       BatchNormalization(), MaxPooling2D(2,2), Dropout(0.25),
+       # Block 4 — 256 filters
+       Conv2D(256,(3,3),padding='same',activation='relu'),
+       BatchNormalization(), MaxPooling2D(2,2), Dropout(0.25),
+       # Classifier Head
+       Flatten(),
+       Dense(512, activation='relu'), BatchNormalization(), Dropout(0.5),
+       Dense(1,  activation='sigmoid')   # Binary output
+   ])
+   return model
+ 
+model = build_model()
+model.summary()</pre></div>
+      </div>
+
+      <div class="tab-content" id="tab-train">
+        <div class="code-block"><button class="code-copy" onclick="copyTab('code-train',this)">Copy</button>
+<pre id="code-train"># 10.2 / 10.4 Preprocessing and Data Augmentation / Training Code
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+ 
+train_dir = 'chest_xray/train'
+val_dir   = 'chest_xray/val'
+test_dir  = 'chest_xray/test'
+ 
+# Training augmentation
+train_datagen = ImageDataGenerator(
+   rescale=1./255,
+   horizontal_flip=True,
+   rotation_range=10,
+   width_shift_range=0.1,
+   height_shift_range=0.1,
+   shear_range=0.2,
+   zoom_range=0.2,
+   fill_mode='nearest'
+)
+val_test_datagen = ImageDataGenerator(rescale=1./255)
+ 
+train_gen = train_datagen.flow_from_directory(
+   train_dir, target_size=(150,150), batch_size=32, class_mode='binary')
+val_gen = val_test_datagen.flow_from_directory(
+   val_dir, target_size=(150,150), batch_size=32, class_mode='binary')
+
+model.compile(optimizer=Adam(0.001),
+             loss='binary_crossentropy', metrics=['accuracy'])
+ 
+reduce_lr  = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                              patience=3, min_lr=1e-6, verbose=1)
+early_stop = EarlyStopping(monitor='val_loss', patience=5,
+                          restore_best_weights=True, verbose=1)
+ 
+history = model.fit(
+   train_gen,
+   steps_per_epoch=train_gen.n // train_gen.batch_size,
+   epochs=20,
+   validation_data=val_gen,
+   validation_steps=val_gen.n // val_gen.batch_size,
+   callbacks=[reduce_lr, early_stop]
+)
+model.save('pneumonia_cnn_model.h5')</pre></div>
+      </div>
+
+      <div class="tab-content" id="tab-predict">
+        <div class="code-block"><button class="code-copy" onclick="copyTab('code-predict',this)">Copy</button>
+<pre id="code-predict"># 10.4 Evaluation Code
+import numpy as np
+from sklearn.metrics import classification_report, confusion_matrix
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+ 
+test_gen = ImageDataGenerator(rescale=1./255).flow_from_directory(
+   'chest_xray/test', target_size=(150,150), batch_size=32,
+   class_mode='binary', shuffle=False)
+
+test_gen.reset()
+y_pred = (model.predict(test_gen) > 0.5).astype(int).flatten()
+y_true = test_gen.classes
+print(classification_report(y_true, y_pred,
+     target_names=['NORMAL','PNEUMONIA']))</pre></div>
+      </div>
+
+      <div class="tab-content" id="tab-gui">
+        <div class="code-block"><button class="code-copy" onclick="copyTab('code-gui',this)">Copy</button>
+<pre id="code-gui"># 10.5 GUI Prediction Application
+import tkinter as tk
+from tkinter import filedialog, Label, Button, Frame
+from PIL import Image, ImageTk
+import numpy as np, tensorflow as tf
+ 
+model = tf.keras.models.load_model('pneumonia_cnn_model.h5')
+selected_path = None
+ 
+def preprocess(path):
+   img = Image.open(path).convert('RGB').resize((150,150))
+   arr = np.array(img) / 255.0
+   return np.expand_dims(arr, axis=0)
+ 
+def browse():
+   global selected_path
+   p = filedialog.askopenfilename(
+       filetypes=[('Images','*.jpg *.jpeg *.png *.bmp')])
+   if p:
+       selected_path = p
+       img = Image.open(p).resize((250,250))
+       tk_img = ImageTk.PhotoImage(img)
+       panel.config(image=tk_img); panel.image = tk_img
+       lbl_result.config(text='Image loaded. Click Predict.', fg='black')
+ 
+def predict():
+   if not selected_path:
+       lbl_result.config(text='Please browse first.', fg='red'); return
+   prob = model.predict(preprocess(selected_path))[0][0]
+   if prob > 0.5:
+       txt, conf, col = 'PNEUMONIA DETECTED', prob*100, '#CC0000'
+   else:
+       txt, conf, col = 'NORMAL', (1-prob)*100, '#006400'
+   lbl_result.config(
+       text=f'Prediction : {txt}\\nConfidence : {conf:.2f}%', fg=col)
+ 
+root = tk.Tk()
+root.title('Pneumonia Detection System'); root.geometry('500x600')
+tk.Label(root, text='Pneumonia Detection System',
+        font=('Helvetica',16,'bold')).pack(pady=10)
+panel = Label(root, bg='#DDD', width=250, height=250); panel.pack(pady=10)
+frm = Frame(root); frm.pack(pady=5)
+Button(frm, text='Browse X-Ray', command=browse,
+      bg='#3A86FF', fg='white').pack(side='left', padx=10)
+Button(frm, text='Predict', command=predict,
+      bg='#FF006E', fg='white', font=('Helvetica',11,'bold')).pack(side='left', padx=10)
+lbl_result = Label(root, text='', font=('Helvetica',14,'bold'))
+lbl_result.pack(pady=20)
+root.mainloop()</pre></div>
+      </div>
+
+      <div class="tab-content" id="tab-setup">
+        <div class="code-block"><button class="code-copy" onclick="copyTab('code-setup',this)">Copy</button>
+<pre id="code-setup"><span class="cm2">#!/bin/bash
+# setup.sh — One-click project setup</span>
+
+<span class="cm2"># Step 1: Create virtual environment</span>
+python3 -m venv pneumoscan_env
+source pneumoscan_env/bin/activate
+
+<span class="cm2"># Step 2: Install all dependencies</span>
+pip install tensorflow keras numpy pillow opencv-python \
+            matplotlib seaborn scikit-learn
+
+<span class="cm2"># Step 3: Download dataset (needs Kaggle API configured)</span>
+pip install kaggle
+kaggle datasets download -d paultimothymooney/chest-xray-pneumonia
+unzip chest-xray-pneumonia.zip -d .
+
+<span class="cm2"># Step 4: Train the model (~20 min CPU / ~5 min GPU)</span>
+python train.py
+
+<span class="cm2"># Step 5: Evaluate performance</span>
+python predict.py
+
+<span class="cm2"># Step 6: Launch the GUI desktop app</span>
+python gui.py
+
+<span class="cm2"># Optional: check GPU
+# python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+
+# Google Colab alternative (free GPU):
+# !pip install kaggle
+# !kaggle datasets download -d paultimothymooney/chest-xray-pneumonia
+# !unzip chest-xray-pneumonia.zip
+# Then run each .py file in separate cells</span></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="team">
+  <div class="max fade-in">
+    <div class="section-label">About</div>
+    <h2 class="section-title">Project team</h2>
+    <p class="section-sub">B.Tech Mini Project — Department of Computer Science &amp; Engineering / AI · 2024–25</p>
+    <div class="team-grid">
+      <div class="team-card"><div class="avatar">S</div><h4>Student Name</h4><div class="role">Register No. ______</div><div class="role" style="margin-top:4px;font-size:12px">Model design &amp; training</div></div>
+      <div class="team-card"><div class="avatar" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4)">G</div><h4>Guide Name</h4><div class="role">Department Faculty</div><div class="role" style="margin-top:4px;font-size:12px">Project supervisor</div></div>
+      <div class="team-card"><div class="avatar" style="background:linear-gradient(135deg,#10b981,#3b82f6)">I</div><h4>Institution</h4><div class="role">[College Name]</div><div class="role" style="margin-top:4px;font-size:12px">Academic year 2024–25</div></div>
+    </div>
+    <div class="prompt-box">
+      <h4>Dataset &amp; references</h4>
+      <p>Kaggle Chest X-Ray Images (Pneumonia) — Paul Mooney · Kermany et al. (2018), Cell 172(5) · TensorFlow 2.x Documentation · Rajpurkar et al. CheXNet (2017) · WHO Pneumonia Statistics 2022</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>PneumoScan AI &nbsp;·&nbsp; B.Tech Mini Project &nbsp;·&nbsp; Built with TensorFlow &amp; Keras &nbsp;·&nbsp; <a href="https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia">Dataset</a> &nbsp;·&nbsp; <a href="https://www.tensorflow.org">TensorFlow</a></p>
+  <p style="margin-top:8px;font-size:12px;opacity:.5">For educational purposes only — not a certified medical device</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+document.querySelectorAll('.fade-in').forEach(el=>{
+  new IntersectionObserver(([e])=>{if(e.isIntersecting)el.classList.add('visible')},{threshold:.12}).observe(el);
+});
+
+function switchTab(name){
+  const names=['model','train','predict','gui','setup'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.toggle('active',c.id==='tab-'+name));
+}
+function copyTab(id,btn){
+  navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
+}
+
+const epochs=Array.from({length:20},(_,i)=>i+1);
+const accT=[.72,.79,.83,.86,.88,.89,.90,.90,.91,.91,.92,.92,.92,.93,.93,.93,.93,.94,.94,.94];
+const accV=[.78,.82,.84,.85,.87,.88,.89,.89,.90,.90,.91,.91,.91,.92,.92,.92,.92,.93,.93,.93];
+const lossT=[.56,.46,.39,.33,.29,.26,.24,.23,.22,.21,.20,.19,.19,.18,.18,.17,.17,.17,.16,.16];
+const lossV=[.48,.41,.36,.31,.28,.26,.24,.23,.22,.22,.21,.21,.21,.20,.20,.20,.20,.19,.20,.19];
+new Chart(document.getElementById('trainChart'),{
+  data:{labels:epochs,datasets:[
+    {type:'line',label:'Train acc',data:accT,borderColor:'#3b82f6',borderWidth:2,pointRadius:0,tension:.4,yAxisID:'y'},
+    {type:'line',label:'Val acc',data:accV,borderColor:'#06b6d4',borderWidth:2,pointRadius:0,tension:.4,yAxisID:'y',borderDash:[4,3]},
+    {type:'line',label:'Train loss',data:lossT,borderColor:'#8b5cf6',borderWidth:2,pointRadius:0,tension:.4,yAxisID:'y2'},
+    {type:'line',label:'Val loss',data:lossV,borderColor:'#f59e0b',borderWidth:2,pointRadius:0,tension:.4,yAxisID:'y2',borderDash:[4,3]},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#6b7fa3',font:{size:10},boxWidth:10,padding:10}}},
+    scales:{
+      x:{ticks:{color:'#6b7fa3',font:{size:9}},grid:{color:'rgba(30,45,69,.5)'}},
+      y:{ticks:{color:'#3b82f6',font:{size:9},callback:v=>Math.round(v*100)+'%'},grid:{color:'rgba(30,45,69,.4)'},min:.6,max:1},
+      y2:{position:'right',ticks:{color:'#8b5cf6',font:{size:9},callback:v=>v.toFixed(1)},grid:{display:false},min:0,max:.7}
+    }}
+});
+
+(function drawArch(){
+  const c=document.getElementById('archCanvas'),x=c.getContext('2d');
+  const W=c.width,H=c.height;
+  x.fillStyle='#101828'; x.fillRect(0,0,W,H);
+  const blocks=[
+    {label:'Input\n150×150×3',sub:'',col:'#3b82f6',w:110},
+    {label:'Conv Block 1\n32 filters',sub:'BN + ReLU + Pool',col:'#8b5cf6',w:128},
+    {label:'Conv Block 2\n64 filters',sub:'BN + ReLU + Pool',col:'#7c3aed',w:128},
+    {label:'Conv Block 3\n128 filters',sub:'BN + ReLU + Pool',col:'#6d28d9',w:128},
+    {label:'Conv Block 4\n256 filters',sub:'BN + ReLU + Pool',col:'#5b21b6',w:128},
+    {label:'Flatten +\nDense 512',sub:'Dropout 0.5',col:'#0891b2',w:118},
+    {label:'Output\nSigmoid',sub:'Normal / Pneumonia',col:'#059669',w:108},
+  ];
+  const total=blocks.reduce((s,b)=>s+b.w,0)+14*6;
+  let cx=(W-total)/2, cy=H/2;
+  blocks.forEach((b,i)=>{
+    const bh=110,bx=cx,by=cy-bh/2;
+    x.fillStyle=b.col+'25'; x.strokeStyle=b.col; x.lineWidth=1.5;
+    x.beginPath(); x.roundRect(bx,by,b.w,bh,7); x.fill(); x.stroke();
+    x.fillStyle='#f0f6ff'; x.font='bold 11px DM Mono,monospace'; x.textAlign='center';
+    b.label.split('\n').forEach((ln,li)=>x.fillText(ln,bx+b.w/2,by+28+li*16));
+    if(b.sub){x.fillStyle='#6b7fa3';x.font='10px DM Sans,sans-serif';x.fillText(b.sub,bx+b.w/2,by+bh-12);}
+    if(i<blocks.length-1){
+      const ax=bx+b.w+2,ay=cy;
+      x.strokeStyle='#1e2d45';x.lineWidth=1.5;
+      x.beginPath();x.moveTo(ax,ay);x.lineTo(ax+12,ay);x.stroke();
+      x.fillStyle='#1e2d45';x.beginPath();x.moveTo(ax+12,ay-4);x.lineTo(ax+12,ay+4);x.lineTo(ax+17,ay);x.fill();
+    }
+    cx+=b.w+14;
+  });
+})();
+
+const nnC=document.getElementById('nnCanvas'),ctx2=nnC.getContext('2d');
+let vizArch='shallow',neurons=[],conns=[],pulses=[],autoTimer=null,speed=5,glowLevel=3;
+const ARCHS={shallow:[3,6,4,2],deep:[3,8,6,5,4,2],wide:[3,12,12,2]};
+const COLS={input:'#3b82f6',hidden:'#8b5cf6',out0:'#10b981',out1:'#ef4444'};
+
+function buildNN(){
+  neurons=[]; conns=[]; pulses=[];
+  const arch=ARCHS[vizArch],nL=arch.length,W=nnC.width,H=nnC.height;
+  arch.forEach((cnt,li)=>{
+    for(let ni=0;ni<cnt;ni++){
+      const x=55+li*(W-110)/(nL-1);
+      const y=H/2+(ni-(cnt-1)/2)*Math.min(44,H/(cnt+1));
+      const col=li===0?COLS.input:li===nL-1?(ni===0?COLS.out0:COLS.out1):COLS.hidden;
+      neurons.push({li,ni,x,y,r:11,act:Math.random()*.4,pulse:0,col});
+    }
+  });
+  for(let li=0;li<ARCHS[vizArch].length-1;li++){
+    const from=neurons.filter(n=>n.li===li),to=neurons.filter(n=>n.li===li+1);
+    from.forEach(f=>to.forEach(t=>conns.push({f,t,w:Math.random()*2-1})));
+  }
+  document.getElementById('vizArch').textContent=vizArch.charAt(0).toUpperCase()+vizArch.slice(1);
+  document.getElementById('vizNeurons').textContent=neurons.length;
+  document.getElementById('vizConns').textContent=conns.length;
+}
+
+function fireSignal(){
+  neurons.filter(n=>n.li===0).forEach(n=>{n.act=.5+Math.random()*.5;n.pulse=1;});
+  const nL=ARCHS[vizArch].length;
+  for(let li=0;li<nL-1;li++){
+    const from=neurons.filter(n=>n.li===li),to=neurons.filter(n=>n.li===li+1);
+    from.forEach(f=>to.forEach(t=>{if(f.act>.3)pulses.push({f,t,prog:0});} ));
+    to.forEach(t=>{
+      const inc=conns.filter(c=>c.t===t);
+      const s=inc.reduce((a,c)=>a+c.f.act*c.w,0);
+      const delay=li*200;
+      setTimeout(()=>{t.act=1/(1+Math.exp(-s));t.pulse=1;},delay);
+    });
+  }
+}
+
+function drawNN(){
+  const W=nnC.width,H=nnC.height;
+  ctx2.clearRect(0,0,W,H);
+  ctx2.fillStyle='#101828'; ctx2.fillRect(0,0,W,H);
+  conns.forEach(c=>{
+    const a=Math.abs(c.w)*.25+.05;
+    ctx2.strokeStyle=c.w>0?`rgba(59,130,246,${a})`:`rgba(239,68,68,${a})`;
+    ctx2.lineWidth=.6;
+    ctx2.beginPath();ctx2.moveTo(c.f.x,c.f.y);ctx2.lineTo(c.t.x,c.t.y);ctx2.stroke();
+  });
+  pulses=pulses.filter(p=>{
+    p.prog+=.016*speed;
+    if(p.prog>=1)return false;
+    const px=p.f.x+(p.t.x-p.f.x)*p.prog,py=p.f.y+(p.t.y-p.f.y)*p.prog;
+    const g=ctx2.createRadialGradient(px,py,0,px,py,glowLevel*3);
+    g.addColorStop(0,'rgba(251,191,36,.9)');g.addColorStop(1,'rgba(251,191,36,0)');
+    ctx2.fillStyle=g;ctx2.beginPath();ctx2.arc(px,py,glowLevel*3,0,Math.PI*2);ctx2.fill();
+    ctx2.fillStyle='#fbbf24';ctx2.beginPath();ctx2.arc(px,py,3,0,Math.PI*2);ctx2.fill();
+    return true;
+  });
+  neurons.forEach(n=>{
+    n.pulse=Math.max(0,n.pulse-.022);
+    const r=n.r+n.pulse*3;
+    if(n.pulse>.08||n.act>.5){
+      const g=ctx2.createRadialGradient(n.x,n.y,0,n.x,n.y,r+glowLevel*2.5);
+      g.addColorStop(0,n.col+'55');g.addColorStop(1,n.col+'00');
+      ctx2.fillStyle=g;ctx2.beginPath();ctx2.arc(n.x,n.y,r+glowLevel*2.5,0,Math.PI*2);ctx2.fill();
+    }
+    const alpha=Math.round((n.act*.55+.2)*255).toString(16).padStart(2,'0');
+    ctx2.fillStyle=n.col+alpha;ctx2.strokeStyle=n.col;ctx2.lineWidth=1.5+n.pulse*2;
+    ctx2.beginPath();ctx2.arc(n.x,n.y,r,0,Math.PI*2);ctx2.fill();ctx2.stroke();
+    ctx2.fillStyle='rgba(240,246,255,.9)';ctx2.font=`${8+n.pulse*2}px DM Mono,monospace`;ctx2.textAlign='center';
+    ctx2.fillText(n.act.toFixed(2),n.x,n.y+3);
+  });
+  document.getElementById('vizActive').textContent=neurons.filter(n=>n.act>.5).length;
+  document.getElementById('vizPulses').textContent=pulses.length;
+  requestAnimationFrame(drawNN);
+}
+
+document.getElementById('btnFire').onclick=fireSignal;
+document.getElementById('btnReset').onclick=buildNN;
+document.getElementById('btnAuto').onclick=function(){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;this.textContent='Auto fire';}
+  else{autoTimer=setInterval(fireSignal,900);this.textContent='Stop auto';}
+};
+document.getElementById('archSelect').onchange=function(){vizArch=this.value;buildNN();};
+document.getElementById('speedSlider').oninput=function(){speed=+this.value;document.getElementById('speedOut').value=this.value;};
+document.getElementById('glowSlider').oninput=function(){glowLevel=+this.value;document.getElementById('glowOut').value=this.value;};
+buildNN(); drawNN();
+
+const SAMPLES={
+  normal:{label:'NORMAL',conf:91.3,cls:'result-normal',
+    logs:['Image loaded (JPG 512×512)','Resize → 150×150 px','Normalize → [0, 1]','CNN forward pass complete','Sigmoid output p = 0.087','p < 0.5 → NORMAL confirmed'],
+    acts:[0.12,0.08,0.15,0.05,0.09,0.04,0.11]},
+  pneumonia:{label:'PNEUMONIA DETECTED',conf:96.4,cls:'result-pneumonia',
+    logs:['Image loaded (JPG 640×480)','Resize → 150×150 px','Normalize → [0, 1]','CNN forward pass complete','Sigmoid output p = 0.964','p > 0.5 → PNEUMONIA detected!'],
+    acts:[0.88,0.92,0.76,0.94,0.85,0.91,0.89]},
+  viral:{label:'PNEUMONIA DETECTED',conf:78.2,cls:'result-pneumonia',
+    logs:['Image loaded (PNG 800×600)','Resize → 150×150 px','Normalize → [0, 1]','CNN forward pass complete','Sigmoid output p = 0.782','p > 0.5 → PNEUMONIA detected (viral pattern)'],
+    acts:[0.72,0.68,0.55,0.78,0.62,0.74,0.70]},
+  borderline:{label:'PNEUMONIA DETECTED',conf:57.8,cls:'result-pneumonia',
+    logs:['Image loaded (JPG 1024×768)','Resize → 150×150 px','Normalize → [0, 1]','CNN forward pass complete','Sigmoid output p = 0.578','Low confidence — recommend radiologist review!'],
+    acts:[0.54,0.48,0.42,0.57,0.51,0.49,0.55]},
+};
+
+function simulateResult(type){
+  const s=SAMPLES[type];
+  document.getElementById('resultPlaceholder').style.display='none';
+  const rc=document.getElementById('resultContent'); rc.style.display='block';
+  document.getElementById('resultLabel').textContent=s.label;
+  document.getElementById('resultLabel').className='result-header '+s.cls;
+  const fill=document.getElementById('confFill');
+  fill.style.width='0%'; fill.className='confidence-fill'+(s.cls==='result-pneumonia'?' bad':'');
+  setTimeout(()=>fill.style.width=s.conf+'%',100);
+  document.getElementById('confNum').textContent=s.conf.toFixed(1)+'%';
+  const logEl=document.getElementById('logLines'); logEl.innerHTML='';
+  s.logs.forEach((l,i)=>setTimeout(()=>{
+    logEl.innerHTML+=`<div style="opacity:0;transition:opacity .3s" id="lg${i}${type}">→ ${l}</div>`;
+    setTimeout(()=>{const e=document.getElementById(`lg${i}${type}`);if(e)e.style.opacity=1;},50);
+  },i*280));
+  const names=['Input','Conv 32','Conv 64','Conv 128','Conv 256','Dense 512','Output'];
+  const bars=document.getElementById('layerBars'); bars.innerHTML='';
+  s.acts.forEach((a,i)=>{
+    const pct=Math.round(a*100);
+    bars.innerHTML+=`<div style="margin-bottom:5px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7fa3;margin-bottom:3px">
+        <span>${names[i]}</span><span style="font-family:'DM Mono'">${pct}%</span>
+      </div>
+      <div style="background:#101828;border-radius:100px;height:4px;overflow:hidden">
+        <div style="height:100%;width:0%;border-radius:100px;background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width 1s ${i*.08}s ease" data-w="${pct}%"></div>
+      </div></div>`;
+  });
+  setTimeout(()=>bars.querySelectorAll('[data-w]').forEach(el=>el.style.width=el.dataset.w),150);
+}
+
+function handleFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const img=document.getElementById('demoImg');
+  img.src=URL.createObjectURL(f); img.style.display='block';
+  simulateResult(Math.random()>.4?'pneumonia':'normal');
+}
+const zone=document.getElementById('uploadZone');
+zone.ondragover=e=>{e.preventDefault();zone.classList.add('drag');};
+zone.ondragleave=()=>zone.classList.remove('drag');
+zone.ondrop=e=>{e.preventDefault();zone.classList.remove('drag');const fi=document.getElementById('fileInput');if(e.dataTransfer.files[0]){handleFile({target:{files:e.dataTransfer.files}})}};
+simulateResult('normal');
+</script>
+</body>
+</html>

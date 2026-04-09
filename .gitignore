@@ -1,0 +1,5 @@
+__pycache__/
+temp_repo/
+*.h5
+chest_xray/
+.venv/
